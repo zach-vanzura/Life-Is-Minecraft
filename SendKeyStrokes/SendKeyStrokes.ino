@@ -6,6 +6,7 @@
  *
  * ================================================================================
  * Use ESP32 board version 2.0.17
+ * 
  * Download keyboard library from github and place in libraries
  * folder
  * https://github.com/T-vK/ESP32-BLE-Keyboard/releases/tag/0.3.0
@@ -13,6 +14,8 @@
  * Documentation for library found here:
  * https://docs.arduino.cc/language-reference/en/functions/usb/Keyboard/
  *
+ * Mouse library:
+ * https://github.com/T-vK/ESP32-BLE-Mouse
 */
 
 
