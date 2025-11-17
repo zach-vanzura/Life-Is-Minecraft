@@ -1,3 +1,6 @@
+#include <BleConnectionStatus.h>
+#include <BleMouse.h>
+
 /*
  * Owen Cook & Zach Vanzura
  * ========================
@@ -13,7 +16,6 @@
  *
 */
 
-#include <BleMouse.h>
 
 BleMouse bleMouse;
 
