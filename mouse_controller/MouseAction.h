@@ -1,0 +1,14 @@
+#ifndef 
+#define MOUSEACTION_H
+
+enum MouseAction {
+  CURSOR_UP,
+  CURSOR_DOWN,
+  CURSOR_LEFT,
+  CURSOR_RIGHT,
+  CLICK_LEFT,
+  CLICL_RIGHT,
+  NO_MOUSE_INPUT
+};
+
+#endif
