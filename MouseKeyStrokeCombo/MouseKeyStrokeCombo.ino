@@ -9,8 +9,7 @@
  * Use ESP32 board version 2.0.17
  * Download keyboard library from github and place in libraries
  * folder
- * mouse repo: https://github.com/T-vK/ESP32-BLE-Mouse
- * keyboard repo: https://github.com/T-vK/ESP32-BLE-Keyboard/releases/tag/0.3.0 
+ *  
  *
  * combo repo: https://github.com/BlynkGO/ESP32-BLE-Combo
 */
