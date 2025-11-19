@@ -14,9 +14,9 @@
 TwoWire busA = TwoWire(0);
 TwoWire busB = TwoWire(1);
 
-MPU6050 mpuA1(busA);
-MPU6050 mpuA2(busA);
-MPU6050 mpuB1(busB);
+MPU6050 mpuChest(busA);
+MPU6050 mpuRight(busA);
+MPU6050 mpuLeft(busB);
 
 unsigned long timer = 0;
 
@@ -27,13 +27,13 @@ void setup() {
   busA.begin(5, 18);
   busB.begin(4, 16);
 
-  mpuA1.setAddress(0x69);
-  mpuA2.setAddress(0x68);
-  mpuB1.setAddress(0x68);
+  mpuChest.setAddress(0x69);
+  mpuRight.setAddress(0x68);
+  mpuLeft.setAddress(0x68);
   
-  byte statusA1 = mpuA1.begin();
-  byte statusA2 = mpuA2.begin();
-  byte statusB1 = mpuB1.begin();
+  byte statusA1 = mpuChest.begin();
+  byte statusA2 = mpuRight.begin();
+  byte statusB1 = mpuLeft.begin();
 
   Serial.print(F("MPU6050 status: "));
   Serial.println(statusA1);
@@ -46,25 +46,25 @@ void setup() {
   Serial.println(F("Calculating offsets, do not move MPU6050"));
   delay(1000);
   // mpu.upsideDownMounting = true; // uncomment this line if the MPU6050 is mounted upside-down
-  mpuA1.calcOffsets();
-  mpuA2.calcOffsets();
-  mpuB1.calcOffsets();
+  mpuChest.calcOffsets();
+  mpuRight.calcOffsets();
+  mpuLeft.calcOffsets();
   Serial.println("Done!\n");
 }
 
 void loop() {
 
-  mpuA1.update();
-  mpuA2.update();
-  mpuB1.update();
+  mpuChest.update();
+  mpuRight.update();
+  mpuLeft.update();
   
   if((millis()-timer)>500){ // print data every 10ms
-  Serial.print("Z-A1 : ");
-  Serial.print(mpuA1.getAngleZ());
-  Serial.print("\tZ-A2 : ");
-  Serial.print(mpuA2.getAngleZ());
+  Serial.print("X-A1 : ");
+  Serial.print(mpuChest.getAngleX());
+  Serial.print("\tY-A2 : ");
+  Serial.print(mpuRight.getAngleY());
   Serial.print("\tZ-B1: ");
-	Serial.println(mpuB1.getAngleZ());
+	Serial.println(mpuLeft.getAngleZ());
 	timer = millis();  
   }
 }

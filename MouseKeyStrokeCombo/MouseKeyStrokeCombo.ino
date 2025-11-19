@@ -12,6 +12,7 @@
  * mouse repo: https://github.com/T-vK/ESP32-BLE-Mouse
  * keyboard repo: https://github.com/T-vK/ESP32-BLE-Keyboard/releases/tag/0.3.0 
  *
+ * combo repo: https://github.com/BlynkGO/ESP32-BLE-Combo
 */
 
 #include <BleCombo.h>
@@ -19,9 +20,6 @@
 #include <BleComboMouse.h>
 #include <BleConnectionStatus.h>
 #include <KeyboardOutputCallbacks.h>
-
-
-
 #include <BleCombo.h>
 
 void setup() {
@@ -33,20 +31,20 @@ void setup() {
 
 void loop() {
   if(Keyboard.isConnected()) {
-    Serial.println("Sending 'Hello world'");
-    Keyboard.println("Hello World");
+    // Serial.println("Sending 'Hello world'");
+    // Keyboard.println("Hello World");
 
-    Serial.println("Sending Enter key...");
-    Keyboard.write(KEY_RETURN);
+    // Serial.println("Sending Enter key...");
+    // Keyboard.write(KEY_RETURN);
 
     Serial.println("Move mouse pointer up");
-    Mouse.move(0,-10);
+    Mouse.move(20,-20);
     
-    Serial.println("Scroll Down");
-    Mouse.move(0,0,-1);
+    // Serial.println("Scroll Down");
+    // Mouse.move(0,0,-1);
 
-    Serial.println("Left click");
-    Mouse.click(MOUSE_LEFT);
+    // Serial.println("Left click");
+    // Mouse.click(MOUSE_LEFT);
   }
   
   Serial.println("Waiting 2 seconds...");
