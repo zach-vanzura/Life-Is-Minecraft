@@ -1,4 +1,4 @@
-#ifndef 
+#ifndef MOUSEACTION_H
 #define MOUSEACTION_H
 
 enum MouseAction {
@@ -7,8 +7,9 @@ enum MouseAction {
   CURSOR_LEFT,
   CURSOR_RIGHT,
   CLICK_LEFT,
-  CLICL_RIGHT,
+  CLICK_RIGHT,
   NO_MOUSE_INPUT
 };
+
 
 #endif
