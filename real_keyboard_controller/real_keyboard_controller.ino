@@ -35,7 +35,10 @@ const byte DATA_BUS_A = 5;
 const byte CLK_BUS_B  = 25;
 const byte DATA_BUS_B = 26;
 
-const byte pinButton = 23;
+const byte PIN_BUTTON_LEFT  = 4;
+const byte PIN_BUTTON_RIGHT = 16;
+
+const byte PIN_START_BUTTON = 23;
 
 // Busses
 TwoWire busA = TwoWire(0);
@@ -45,7 +48,13 @@ MPU6050 mpuChest(busA);
 MPU6050 mpuLeft(busA);
 MPU6050 mpuRight(busB);
 
-Bounce button = Bounce();
+Bounce startButton = Bounce();
+
+Bounce leftButton  = Bounce();
+Bounce rightButton = Bounce();
+
+int currSlot = 1; // Hotbar slot
+
 bool start = false;
 
 void setup() {
@@ -54,10 +63,13 @@ void setup() {
   Keyboard.begin();
   Mouse.begin();
 
-  button.attach(pinButton, INPUT_PULLUP);
-  button.interval(5);
-  // button.setPressedState(LOW);
+  startButton.attach(PIN_START_BUTTON, INPUT_PULLUP);
+  leftButton.attach(PIN_BUTTON_LEFT , INPUT_PULLUP);
+  rightButton.attach(PIN_BUTTON_RIGHT, INPUT_PULLUP);
 
+  startButton.interval(5);
+  leftButton.interval(5);
+  rightButton.interval(5);
   
   // Data pin, clock pin
   busA.begin(DATA_BUS_A, CLK_BUS_A);
@@ -70,8 +82,8 @@ void setup() {
   Serial.println("Press the button when you are ready");
 
   while(!start) {
-    button.update();
-    if (button.fell()) {
+    startButton.update();
+    if (startButton.fell()) {
       start = true;
     }
   }
@@ -97,6 +109,15 @@ void setup() {
   mpuLeft.calcOffsets();
   mpuRight.calcOffsets();
   Serial.println("Done!\n");
+
+  // Wait until the keyboard is connected
+  while(!Keyboard.isConnected()) {};
+  
+
+  char invSlot = currSlot + '0';
+  Keyboard.press(invSlot);
+  Keyboard.release(invSlot);
+
 }
 
 void loop() {
@@ -107,6 +128,32 @@ void loop() {
     mpuRight.update();
     mpuLeft.update();
     mpuChest.update();
+
+    leftButton.update();
+    rightButton.update();
+
+    // going down
+    if (leftButton.fell()) {
+      // Serial.println("Left button");
+      currSlot--;
+      if (currSlot == 0) currSlot = 9;
+      Serial.println(currSlot);
+      char invSlot = currSlot + '0';
+      Keyboard.press(invSlot);
+      Keyboard.release(invSlot);
+    }
+    
+    // going up
+    if (rightButton.fell()) {
+      // Serial.println("Right button");
+      currSlot++;
+      if (currSlot == 10) currSlot = 1;
+      Serial.println(currSlot);
+      char invSlot = currSlot + '0';
+      Keyboard.press(invSlot);
+      Keyboard.release(invSlot);
+
+    }
 
     float absGyroLeft = abs(mpuLeft.getGyroZ()); // angular acceleration z
     float angleLeft = mpuLeft.getAngleZ(); // angle z
@@ -127,6 +174,12 @@ void loop() {
       Keyboard.release(' '); // release it right away
     }
 
+
+
+
+  }
+  else {
+    Serial.println("Keyboard not connected");
   }
 
 
@@ -172,18 +225,18 @@ void checkSpeed(float gyroLeft, float gyroRight) {
 
   // Sprinting
   if (gyroLeft >= 230 && gyroRight >= 230) {
-    Serial.println("SPRINTING");
+    // Serial.println("SPRINTING");
     Keyboard.press('f');
     
   }
   // Walking
   else if (gyroLeft >= 45 && gyroRight >= 45) {
-    Serial.println("WALKING");
+    // Serial.println("WALKING");
     Keyboard.press('w');
   }
   // Stopped
   else if (gyroLeft <= 1 && gyroRight <= 1) {
-    Serial.println("STOPPED");
+    // Serial.println("STOPPED");
     Keyboard.release('f');
     Keyboard.release('w');
   }
