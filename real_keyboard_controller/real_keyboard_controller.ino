@@ -16,10 +16,18 @@
  * -----------------------------------------------------------
  */
 
+
 #include "Wire.h"
 #include <MPU6050_light.h>
-#include "directions.h"
+#include "direction_speed.h"
 #include <Bounce2.h>
+
+#include <BleCombo.h>
+#include <BleComboKeyboard.h>
+#include <BleComboMouse.h>
+#include <BleConnectionStatus.h>
+#include <KeyboardOutputCallbacks.h>
+#include <BleCombo.h>
 
 // Pins
 const byte CLK_BUS_A  = 18;
@@ -34,14 +42,17 @@ TwoWire busA = TwoWire(0);
 TwoWire busB = TwoWire(1);
 
 MPU6050 mpuChest(busA);
-MPU6050 mpuRight(busA);
-MPU6050 mpuLeft(busB);
+MPU6050 mpuLeft(busA);
+MPU6050 mpuRight(busB);
 
 Bounce button = Bounce();
 bool start = false;
 
 void setup() {
   Serial.begin(115200);
+
+  Keyboard.begin();
+  Mouse.begin();
 
   button.attach(pinButton, INPUT_PULLUP);
   button.interval(5);
@@ -53,8 +64,8 @@ void setup() {
   busB.begin(DATA_BUS_B, CLK_BUS_B);
 
   mpuChest.setAddress(0x69);
-  mpuRight.setAddress(0x68);
   mpuLeft.setAddress(0x68);
+  mpuRight.setAddress(0x68);
 
   Serial.println("Press the button when you are ready");
 
@@ -72,8 +83,8 @@ void setup() {
   Serial.println("Accelerometers callibrating, do not move");
   
   byte statusA1 = mpuChest.begin();
-  byte statusA2 = mpuRight.begin();
-  byte statusB1 = mpuLeft.begin();
+  byte statusA2 = mpuLeft.begin();
+  byte statusB1 = mpuRight.begin();
 
   Serial.print(F("MPU6050 status: "));
   // If something goes wrong then
@@ -83,41 +94,57 @@ void setup() {
   delay(1000);
 
   mpuChest.calcOffsets();
-  mpuRight.calcOffsets();
   mpuLeft.calcOffsets();
+  mpuRight.calcOffsets();
   Serial.println("Done!\n");
 }
 
 void loop() {
+  if (Keyboard.isConnected()) {
 
-  mpuRight.update();
-  mpuLeft.update();
-  mpuChest.update();
+    static Speed speedState = STOP;
 
-  Serial.print("Right hand values for gyro: ");
-  Serial.print(mpuRight.getGyroZ());
-  Serial.print("\tRight hand angle: ");
-  Serial.println(mpuRight.getAngleZ());
-  Serial.println("\n==========================================\n");
+    mpuRight.update();
+    mpuLeft.update();
+    mpuChest.update();
+
+    float absGyroLeft = abs(mpuLeft.getGyroZ()); // angular acceleration z
+    float angleLeft = mpuLeft.getAngleZ(); // angle z
+
+    float absGyroRight = abs(mpuRight.getGyroZ()); // angular acceleration in z
+    float angleRight = mpuRight.getAngleZ(); // Angle in z
+
+    float accYChest = mpuChest.getAccY(); // Acceleration in y for jumping
+    float angleChest = mpuChest.getAngleZ(); // Z angle of chest
+
+    int magAngleLeft = abs(angleLeft);
+    int magAngleRight = abs(angleRight);
+
+    checkSpeed(absGyroLeft, absGyroRight);
+
+    if (accYChest > 0.75) {
+      Keyboard.press(' ');   // press the key
+      Keyboard.release(' '); // release it right away
+    }
+
+  }
 
 
-  Serial.print("Left hand values for gyro: ");
-  Serial.print(mpuLeft.getGyroZ());
-  Serial.print("\tLeft hand angle: ");
-  Serial.println(mpuLeft.getAngleZ());
-  Serial.println("\n==========================================\n");
+  // // If the signs are opposite +/- 10 degrees 
+  // if (magAngleRight =< magAngleLeft + 10 && magAngleRight >= magAngle - 10) {
 
+  //   // Move backward switch case (both angles have same sign)
+  //   if ((angleRight > 0 && angleLeft > 0) || (angleRight < 0 && angleLeft < 0)) {
+  //     checkSpeed(absGyroLeft, absGyroRight);
+  //   }
+  //   // Move forward switch case (angles have different sign)
+  //   else {
+  //     checkSpeed(absGyroLeft, absGyroRight);
 
-  // Jump for 1.5
-  Serial.print("Chest values for gyro: ");
-  Serial.print(mpuChest.getAccY());
-  Serial.print("\tChest angle: ");
-  Serial.println(mpuChest.getAngleZ());
-  Serial.println("\n==========================================\n");
+  //   }
 
+  // }
 
-
-  delay(250);
 
 }
 
@@ -140,6 +167,28 @@ void loop() {
 // Get the chest angle Z value (because it faces up)
 // thats kinda it
 
+
+void checkSpeed(float gyroLeft, float gyroRight) {
+
+  // Sprinting
+  if (gyroLeft >= 230 && gyroRight >= 230) {
+    Serial.println("SPRINTING");
+    Keyboard.press('f');
+    
+  }
+  // Walking
+  else if (gyroLeft >= 45 && gyroRight >= 45) {
+    Serial.println("WALKING");
+    Keyboard.press('w');
+  }
+  // Stopped
+  else if (gyroLeft <= 1 && gyroRight <= 1) {
+    Serial.println("STOPPED");
+    Keyboard.release('f');
+    Keyboard.release('w');
+  }
+
+}
 
 
 
