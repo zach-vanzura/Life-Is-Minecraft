@@ -5,12 +5,9 @@
 #include <MPU6050_light.h>
 // sketch > include library > ESP 32 Combo Keyboard Mouse
 #include <BleCombo.h>
-#include <BleComboKeyboard.h>
-#include <BleComboMouse.h>
-#include <BleConnectionStatus.h>
-#include <KeyboardOutputCallbacks.h>
 
-#define MOUSE_SENS 10
+
+#define MOUSE_SENS 15
 
 
 enum MouseAction {
@@ -23,7 +20,7 @@ enum MouseAction {
   NO_MOUSE_INPUT
 };
 
-MouseAction getMouseInput(MPU6050 &mpuLeft, MPU6050 &mpuRight, MPU6050 &mpuChest);
+MouseAction getMouseInput(MPU6050 &mpuLeft, MPU6050 &mpuRight, MPU6050 &mpuChest, int &currChestX, int &currChestY);
 void moveUp(BleComboMouse &mouse);
 void moveDown(BleComboMouse &mouse);
 void moveLeft(BleComboMouse &mouse);
@@ -33,36 +30,37 @@ void rightClick(BleComboMouse &mouse);
 int detectClick(MPU6050 &handMPU);
 
 
-MouseAction getMouseInput(MPU6050 &mpuLeft, MPU6050 &mpuRight, MPU6050 &mpuChest) {
+MouseAction getMouseInput(MPU6050 &mpuLeft, MPU6050 &mpuRight, MPU6050 &mpuChest, int &currChestX, int &currChestY) {
   // in Degrees [º]
-  int chestAngleX = (int) mpuChest.getAngleX();
-  int chestAngleY = (int) mpuChest.getAngleY();
+  currChestX = (int) mpuChest.getAngleX();
+  currChestY = (int) mpuChest.getAngleY();
+
+  Serial.print("Chest Angle X: ");
+  Serial.print(currChestX);
+  Serial.print("Chest Angle Y: ");
+  Serial.println(currChestY);
+
 
   // Cursor UP and DOWN
-  switch (chestAngleX) {
-    case -180 ... - 10:
-      return CURSOR_UP;
-      break;
-    case 10 ... 180:
+  switch (currChestX) {
+    case -180 ... -5:
+      // add to current player angle 
       return CURSOR_DOWN;
+      break;
+    case 3 ... 180:
+      return CURSOR_UP;
       break;
   }
 
   // Cursor LEFT and RIGHT
-  switch (chestAngleY) {
-    case -180 ... -5:
-      return CURSOR_RIGHT;
-      break;
-    case 5 ... 180:
+  switch (currChestY) {
+    case -180 ... -20:
       return CURSOR_LEFT;
       break;
+    case 20 ... 180:
+      return CURSOR_RIGHT;
+      break;
   }
-
-  if (detectClick(mpuLeft)) return CLICK_LEFT;
-  if (detectClick(mpuRight)) return CLICK_RIGHT;
-
-  // code only gets here if there is no input 
-  return NO_MOUSE_INPUT;
 }
 
 
@@ -96,7 +94,7 @@ int detectClick(MPU6050 &handMPU) {
   float AccY = handMPU.getAccY();
   float AccZ = handMPU.getAccZ();
 
-  if (abs(AccX) < 1 && AccY > 1 && abs(AccZ) < 1) return 1;
+  if (abs(AccY) < 1 && AccX > 1 && abs(AccZ) <= 1) return 1;
   return 0;
 }
 

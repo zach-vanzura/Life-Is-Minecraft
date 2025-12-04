@@ -112,11 +112,9 @@ void setup() {
 
   // Wait until the keyboard is connected
   while(!Keyboard.isConnected()) {};
-  
-
-  char invSlot = currSlot + '0';
-  Keyboard.press(invSlot);
-  Keyboard.release(invSlot);
+  // Make sure the slot starts at 1
+  Keyboard.press('1');
+  Keyboard.release('1');
 
 }
 
@@ -142,7 +140,7 @@ void loop() {
       Keyboard.press(invSlot);
       Keyboard.release(invSlot);
     }
-    
+
     // going up
     if (rightButton.fell()) {
       // Serial.println("Right button");
