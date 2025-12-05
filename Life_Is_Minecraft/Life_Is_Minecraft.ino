@@ -70,6 +70,7 @@ int currSlot = 1; // Hotbar slot
 int currChestX = 0;
 int currChestY = 0;
 
+bool clicking = false;
 bool start = false;
 
 void setup() {
@@ -100,6 +101,7 @@ void setup() {
 void loop() {
   if (Keyboard.isConnected()) {
     static Speed speedState = STOP;
+    static MouseAction prevAction = NO_MOUSE_INPUT;
 
     mpuChest.update();
     mpuRight.update();
@@ -113,7 +115,7 @@ void loop() {
       // Serial.println("Left button");
       currSlot--;
       if (currSlot == 0) currSlot = 9;
-      Serial.println(currSlot);
+      // Serial.println(currSlot);
       char invSlot = currSlot + '0';
       Keyboard.press(invSlot);
       delay(10);
@@ -126,7 +128,7 @@ void loop() {
       // Serial.println("Right button");
       currSlot++;
       if (currSlot == 10) currSlot = 1;
-      Serial.println(currSlot);
+      // Serial.println(currSlot);
       char invSlot = currSlot + '0';
       Keyboard.press(invSlot);
       delay(10);
@@ -147,7 +149,24 @@ void loop() {
     int magAngleLeft = abs(angleLeft);
     int magAngleRight = abs(angleRight);
 
-    checkSpeed(absGyroLeft, absGyroRight);
+    float accXLeft = mpuLeft.getAccX(); // Acceleration in y for jumping
+    float accYLeft = mpuLeft.getAccY(); // Acceleration in y for jumping
+    float accZLeft = mpuLeft.getAccZ(); // Acceleration in y for jumping
+
+    float magAccLeft = sqrt(accXLeft*accXLeft +
+                            accYLeft*accYLeft +
+                            accZLeft*accZLeft);
+
+    float accXRight = mpuRight.getAccX(); // Acceleration in y for jumping
+    float accYRight = mpuRight.getAccY(); // Acceleration in y for jumping
+    float accZRight = mpuRight.getAccZ(); // Acceleration in y for jumping
+
+    float magAccRight = sqrt(accXRight*accXRight +
+                            accYRight*accYRight +
+                            accZRight*accZRight);
+
+
+    checkSpeed(absGyroLeft, absGyroRight, magAccLeft, magAccRight);
 
     if (accYChest > 0.75) {
       Keyboard.press(' ');   // press the key
@@ -156,13 +175,20 @@ void loop() {
       delay(10);
     }
 
-    MouseAction mouseInput = getMouseInput(mpuLeft, mpuRight, mpuChest, currChestX, currChestY);
-    Serial.print("Detected mouse input: ");
-    Serial.println(mouseInput);
+
+    MouseAction mouseInput = getMouseInput(mpuLeft, mpuRight, mpuChest, prevAction, clicking);
+    // Serial.print("Detected mouse input: ");
+    // Serial.println(mouseInput);
     // there is no Mouse.isConnected().
     // One .isConnected() to rule them all
-    actOnInput(Mouse, mouseInput);
+    actOnInput(Mouse, mouseInput, clicking);
+    Serial.print("Current Mouse Input: ");
+    Serial.println((MouseAction) mouseInput);
+    Serial.print("\t Previous Input: ");
+    Serial.println((MouseAction) prevAction);
     delay(5);
+
+    prevAction = mouseInput;
 
   } 
 
@@ -232,28 +258,31 @@ void MPUinit() {
 // Get the chest angle Z value (because it faces up)
 // thats kinda it
 
-void checkSpeed(float gyroLeft, float gyroRight) {
+void checkSpeed(float gyroLeft, float gyroRight, float magAccLeft, float magAccRight) {
 
-  // Sprinting
-  if (gyroLeft >= 230 && gyroRight >= 230) {
-    // Serial.println("SPRINTING");
-    Keyboard.press('f');
-    delay(10);
-    
-  }
-  // Walking
-  else if (gyroLeft >= 45 && gyroRight >= 45) {
-    // Serial.println("WALKING");
-    Keyboard.press('w');
-    delay(10);
-  }
-  // Stopped
-  else if (gyroLeft <= 10 && gyroRight <= 10) {
-    // Serial.println("STOPPED");
-    Keyboard.releaseAll();
-    delay(10);
+  // if (magAccLeft < 1.25 && magAccRight < 1.25) {
+    // Sprinting
+    if (gyroLeft >= 230 && gyroRight >= 230) {
+      // Serial.println("SPRINTING");
+      Keyboard.press('f');
+      delay(10);
+      
+    }
+    // Walking
+    else if (gyroLeft >= 60 && gyroRight >= 60) {
+      // Serial.println("WALKING");
+      Keyboard.press('w');
+      delay(10);
+    }
 
-  }
+    // Stopped
+    else if (gyroLeft <= 15 && gyroRight <= 15) {
+      // Serial.println("STOPPED");
+      Keyboard.releaseAll();
+      delay(10);
+
+    }
+  // }
 
 }
 

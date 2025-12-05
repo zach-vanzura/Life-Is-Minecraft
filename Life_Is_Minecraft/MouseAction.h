@@ -17,28 +17,31 @@ enum MouseAction {
   CURSOR_RIGHT,
   CLICK_LEFT,
   CLICK_RIGHT,
+  CLICK_RELEASE,
   NO_MOUSE_INPUT
 };
 
-MouseAction getMouseInput(MPU6050 &mpuLeft, MPU6050 &mpuRight, MPU6050 &mpuChest, int &currChestX, int &currChestY);
+MouseAction getMouseInput(MPU6050 &mpuLeft, MPU6050 &mpuRight, MPU6050 &mpuChest);
+void actOnInput(BleComboMouse &Mouse, MouseAction &mouseInput, MouseAction &prevAction);
 void moveUp(BleComboMouse &mouse);
 void moveDown(BleComboMouse &mouse);
 void moveLeft(BleComboMouse &mouse);
 void moveRight(BleComboMouse &mouse);
 void leftClick(BleComboMouse &mouse);
 void rightClick(BleComboMouse &mouse);
+void releaseClick(BleComboMouse &mouse);
 int detectClick(MPU6050 &handMPU);
 
 
-MouseAction getMouseInput(MPU6050 &mpuLeft, MPU6050 &mpuRight, MPU6050 &mpuChest, int &delay, int &start) {
+MouseAction getMouseInput(MPU6050 &mpuLeft, MPU6050 &mpuRight, MPU6050 &mpuChest, MouseAction &prevAction, bool &clicking) {
   // in Degrees [º]
-  currChestX = (int) mpuChest.getAngleX();
-  currChestY = (int) mpuChest.getAngleY();
+  int currChestX = (int) mpuChest.getAngleX();
+  int currChestY = (int) mpuChest.getAngleY();
 
-  Serial.print("Chest Angle X: \t");
-  Serial.print(currChestX);
-  Serial.print("Chest Angle Y: ");
-  Serial.println(currChestY);
+  // Serial.print("Chest Angle X: \t");
+  // Serial.print(currChestX);
+  // Serial.print("Chest Angle Y: ");
+  // Serial.println(currChestY);
 
 
   // Cursor UP and DOWN
@@ -61,10 +64,24 @@ MouseAction getMouseInput(MPU6050 &mpuLeft, MPU6050 &mpuRight, MPU6050 &mpuChest
       return CURSOR_RIGHT;
       break;
   }
+
+  if (detectClick(mpuLeft)) {
+    clicking = true;
+    return CLICK_RIGHT;
+  } else if (detectClick(mpuRight)) {
+    clicking = true;
+    return CLICK_LEFT;
+  } else if (clicking) {
+      Serial.println("releasing click");
+      clicking = false;
+    return CLICK_RELEASE;
+  } else {
+    return NO_MOUSE_INPUT;
+  }
 }
 
 
-void actOnInput(BleComboMouse &Mouse, MouseAction &mouseInput) {
+void actOnInput(BleComboMouse &Mouse, MouseAction &mouseInput, MouseAction prevAction, bool clicking) {
     switch (mouseInput) {
       case CURSOR_UP:
         moveUp(Mouse);
@@ -77,6 +94,7 @@ void actOnInput(BleComboMouse &Mouse, MouseAction &mouseInput) {
         break;
       case CURSOR_RIGHT:
       // if prev oreintation was move right or centered, move right, else move left
+        if (prevACTION == ())
         moveRight(Mouse);
         break;
       case CLICK_LEFT:
@@ -84,6 +102,9 @@ void actOnInput(BleComboMouse &Mouse, MouseAction &mouseInput) {
         break;
       case CLICK_RIGHT:
         rightClick(Mouse);
+        break;
+      case CLICK_RELEASE:
+        releaseClick(Mouse);
         break;
     }
 }
@@ -95,7 +116,7 @@ int detectClick(MPU6050 &handMPU) {
   float AccY = handMPU.getAccY();
   float AccZ = handMPU.getAccZ();
 
-  if (abs(AccY) < 1 && AccX > 1 && abs(AccZ) <= 1) return 1;
+  if ((AccX > 1 || AccX < -1) && AccZ <= 1.5 && abs(AccY) < 1) return 1;
   return 0;
 }
 
@@ -116,11 +137,18 @@ void moveRight(BleComboMouse &mouse) {
 }
 
 void leftClick(BleComboMouse &mouse) {
-  mouse.click(MOUSE_LEFT);
+  mouse.press(MOUSE_LEFT);
+  delay(300);
 }
 
 void rightClick(BleComboMouse &mouse) {
-  mouse.click(MOUSE_RIGHT);
+  mouse.press(MOUSE_RIGHT);
+  delay(300);
+}
+
+void releaseClick(BleComboMouse &mouse) {
+  mouse.release(MOUSE_LEFT);
+  mouse.release(MOUSE_RIGHT);
 }
 
 #endif
