@@ -32,8 +32,8 @@ int detectClick(MPU6050 &handMPU);
 
 MouseAction getMouseInput(MPU6050 &mpuLeft, MPU6050 &mpuRight, MPU6050 &mpuChest, int &delay, int &start) {
   // in Degrees [º]
-  currChestX = (int) mpuChest.getAngleX();
-  currChestY = (int) mpuChest.getAngleY();
+  int currChestX = (int) mpuChest.getAngleX();
+  int currChestY = (int) mpuChest.getAngleY();
 
   Serial.print("Chest Angle X: \t");
   Serial.print(currChestX);
