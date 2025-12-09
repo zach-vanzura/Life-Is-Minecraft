@@ -38,11 +38,17 @@ MouseAction getMouseInput(MPU6050 &mpuLeft, MPU6050 &mpuRight, MPU6050 &mpuChest
   int currChestX = (int) mpuChest.getAngleX();
   int currChestY = (int) mpuChest.getAngleY();
 
+  // prints for debugging
   // Serial.print("Chest Angle X: \t");
   // Serial.print(currChestX);
   // Serial.print("Chest Angle Y: ");
   // Serial.println(currChestY);
 
+  /*
+    Note: This behavior mimics turning in real life, it is more like
+    how turning would be in VR, which isn't optimal for a static screen,
+    instead, joystick behavior would be better
+  */
 
   // Cursor UP and DOWN
   switch (currChestX) {
@@ -93,8 +99,6 @@ void actOnInput(BleComboMouse &Mouse, MouseAction &mouseInput, MouseAction prevA
         moveLeft(Mouse);
         break;
       case CURSOR_RIGHT:
-      // if prev oreintation was move right or centered, move right, else move left
-        if (prevACTION == ())
         moveRight(Mouse);
         break;
       case CLICK_LEFT:
@@ -109,7 +113,7 @@ void actOnInput(BleComboMouse &Mouse, MouseAction &mouseInput, MouseAction prevA
     }
 }
 
-
+// detecting jerk in the z axis
 int detectClick(MPU6050 &handMPU) {
   
   float AccX = handMPU.getAccX();
