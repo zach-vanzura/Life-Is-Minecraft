@@ -73,6 +73,13 @@ int currChestY = 0;
 bool clicking = false;
 bool start = false;
 
+State currState = NOT_TURNING;
+State currStateX = NOT_TURNING;
+
+int prevChestY = 0;
+int prevChestX = 0;
+
+
 void setup() {
   Serial.begin(115200);
   
@@ -176,17 +183,20 @@ void loop() {
     }
 
 
-    MouseAction mouseInput = getMouseInput(mpuLeft, mpuRight, mpuChest, prevAction, clicking);
+    MouseAction mouseInput = getMouseInput(mpuLeft, mpuRight, mpuChest, clicking, currState, prevChestY, currStateX, prevChestX);
     // Serial.print("Detected mouse input: ");
     // Serial.println(mouseInput);
     // there is no Mouse.isConnected().
     // One .isConnected() to rule them all
-    actOnInput(Mouse, mouseInput, clicking);
-    Serial.print("Current Mouse Input: ");
-    Serial.println((MouseAction) mouseInput);
-    Serial.print("\t Previous Input: ");
-    Serial.println((MouseAction) prevAction);
+    actOnInput(Mouse, mouseInput);
+    // Serial.print("Current Mouse Input: ");
+    // Serial.println((MouseAction) mouseInput);
+    // Serial.print("\t Previous Input: ");Z
+    // Serial.println((MouseAction) prevAction);
     delay(5);
+    prevChestY = (int)mpuChest.getAngleY();
+    prevChestX = (int)mpuChest.getAngleX();
+    Serial.println(currState);
 
     prevAction = mouseInput;
 
