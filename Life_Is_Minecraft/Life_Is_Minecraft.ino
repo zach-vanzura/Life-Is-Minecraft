@@ -28,18 +28,9 @@
 #include "Wire.h"
 
 // ==+ custom libs +==
-// sketch > include library > ESP 32 Combo Keyboard Mouse
 // includes all ncessary libraries for interfacing with MPU and BLEKeyboardMouse
 #include "MouseAction.h"
-
-// #include <BleCombo.h>
-// #include <BleComboKeyboard.h>
-// #include <BleComboMouse.h>
-// #include <BleConnectionStatus.h>
-// #include <KeyboardOutputCallbacks.h>
-
 #include "direction_speed.h"
-// #include <MPU6050_light.h>
 #include <Bounce2.h>  // Bound2
 
 // Pins
@@ -117,6 +108,7 @@ void loop() {
     leftButton.update();
     rightButton.update();
 
+    // hotbar slot selection
     // going down
     if (leftButton.fell()) {
       // Serial.println("Left button");
@@ -129,7 +121,7 @@ void loop() {
       Keyboard.release(invSlot);
       delay(10);
     }
-    
+    // hotbar slot selection
     // going up
     if (rightButton.fell()) {
       // Serial.println("Right button");
@@ -144,6 +136,7 @@ void loop() {
 
     }
 
+    // acting on keyboard inputs
     float absGyroLeft = abs(mpuLeft.getGyroZ()); // angular acceleration z
     float angleLeft = mpuLeft.getAngleZ(); // angle z
 
@@ -182,17 +175,18 @@ void loop() {
       delay(10);
     }
 
-
-    MouseAction mouseInput = getMouseInput(mpuLeft, mpuRight, mpuChest, clicking, currState, prevChestY, currStateX, prevChestX);
+    // acting on mouse inpouts
+    MouseAction mouseInput = getMouseInput(mpuLeft, mpuRight, mpuChest, prevAction, clicking);
+    // prints for debugging
     // Serial.print("Detected mouse input: ");
     // Serial.println(mouseInput);
-    // there is no Mouse.isConnected().
-    // One .isConnected() to rule them all
-    actOnInput(Mouse, mouseInput);
-    // Serial.print("Current Mouse Input: ");
-    // Serial.println((MouseAction) mouseInput);
-    // Serial.print("\t Previous Input: ");Z
-    // Serial.println((MouseAction) prevAction);
+    actOnInput(Mouse, mouseInput, clicking);
+
+    // prints for debugging
+    Serial.print("Current Mouse Input: ");
+    Serial.println((MouseAction) mouseInput);
+    Serial.print("\t Previous Input: ");
+    Serial.println((MouseAction) prevAction);
     delay(5);
     prevChestY = (int)mpuChest.getAngleY();
     prevChestX = (int)mpuChest.getAngleX();
@@ -204,14 +198,13 @@ void loop() {
 
 }
 
-// might want to move this into a different header file later on...
 
 /*
  ===+=== ===+=== ===+=== ===+=== ===+=== ===+=== MPU init  ===+=== ===+=== ===+=== ===+=== ===+=== ===+===
 */
 
 void MPUinit() {
-
+  // create two virtual I2C busses using Wire.h (only possible on ESP32)
   // Data pin, clock pin
   busA.begin(DATA_BUS_A, CLK_BUS_A);
   busB.begin(DATA_BUS_B, CLK_BUS_B);

@@ -46,13 +46,11 @@ MouseAction getMouseInput(MPU6050 &mpuLeft, MPU6050 &mpuRight, MPU6050 &mpuChest
   int currChestX = (int) mpuChest.getAngleX();
   int currChestY = (int) mpuChest.getAngleY();
 
+  // prints for debugging
   // Serial.print("Chest Angle X: \t");
   // Serial.print(currChestX);
   // Serial.print("Chest Angle Y: ");
   // Serial.println(currChestY);
-
-  switch (currState) {
-    case NOT_TURNING:
 
       if (currChestY > prevChestY && currChestY > 10) { // to right
         currState = TURNING_RIGHT;
@@ -172,7 +170,6 @@ void actOnInput(BleComboMouse &Mouse, MouseAction &mouseInput) {
         moveLeft(Mouse);
         break;
       case CURSOR_RIGHT:
-      // if prev oreintation was move right or centered, move right, else move left
         moveRight(Mouse);
         break;
       case CLICK_LEFT:
@@ -187,7 +184,7 @@ void actOnInput(BleComboMouse &Mouse, MouseAction &mouseInput) {
     }
 }
 
-
+// detecting jerk in the z axis
 int detectClick(MPU6050 &handMPU) {
   
   float AccX = handMPU.getAccX();
