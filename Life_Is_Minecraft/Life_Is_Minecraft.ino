@@ -24,49 +24,58 @@
  * 
 */
 
-// ==+ std libs +==
+// ======= STANDARD LIBRARIES ======= //
 #include "Wire.h"
 
-// ==+ custom libs +==
+// ======= CUSTOM LIBRARIES ======= //
 // includes all ncessary libraries for interfacing with MPU and BLEKeyboardMouse
 #include "MouseAction.h"
 #include "direction_speed.h"
 #include <Bounce2.h>  // Bound2
 
-// Pins
+// ======= PINW ======= //
+// I2C busses
 const byte CLK_BUS_A  = 13;
 const byte DATA_BUS_A = 14;
 const byte CLK_BUS_B  = 25;
 const byte DATA_BUS_B = 26;
 
+// Inventory control buttons
 const byte PIN_BUTTON_LEFT  = 32;
 const byte PIN_BUTTON_RIGHT = 33;
 
+// Start/callibration button
 const byte PIN_START_BUTTON = 27;
 
-// digital two bus I2C
+// ======= CONSTANTS ======= //
+
+const float WALKING_THRESHOLD = 230;
+const float SPRINTING_THRESHOLD = 60;
+const float STOP_THRESHOLD = 15;
+
+const float JUMP_THRESHOLD = 0.75;
+
+// ======= OBJECTS/VARIABLES DEFS ======= //
+// I2C busses
 TwoWire busA = TwoWire(0);
 TwoWire busB = TwoWire(1);
 
+// IMU accelerometers in respective locations
 MPU6050 mpuChest(busA);
 MPU6050 mpuRight(busA);
 MPU6050 mpuLeft(busB);
 
+// Start/callibration logic
 Bounce startButton = Bounce();
-
-Bounce leftButton  = Bounce();
-Bounce rightButton = Bounce();
-
-int currSlot = 1; // Hotbar slot
-int currChestX = 0;
-int currChestY = 0;
-
-bool clicking = false;
 bool start = false;
 
-State currState = NOT_TURNING;
-State currStateX = NOT_TURNING;
+// Hotbar selection logic
+Bounce leftButton  = Bounce();
+Bounce rightButton = Bounce();
+int currSlot = 1; // Hotbar slot
 
+// Turning right and left logic
+State currState = NOT_TURNING;
 int prevChestY = 0;
 int prevChestX = 0;
 
@@ -74,14 +83,17 @@ int prevChestX = 0;
 void setup() {
   Serial.begin(115200);
   
+  // Buttons
   startButton.attach(PIN_START_BUTTON, INPUT_PULLUP);
   leftButton.attach(PIN_BUTTON_LEFT , INPUT_PULLUP);
   rightButton.attach(PIN_BUTTON_RIGHT, INPUT_PULLUP);
 
+  // Debounce duration
   startButton.interval(5);
   leftButton.interval(5);
   rightButton.interval(5);
 
+  // Initialize MPU and keyboard
   MPUinit();
   Serial.println("Done!\n");
   Keyboard.begin();
@@ -90,17 +102,20 @@ void setup() {
   // Wait until the keyboard is connected
   while(!Keyboard.isConnected()) {};
 
-  // Make sure the slot starts at 1
+  // Make sure hotbart slot starts at 1 
   Keyboard.press('1');
   Keyboard.release('1');
 
 }
 
 void loop() {
+  // Make sure keyboard is connected
   if (Keyboard.isConnected()) {
-    static Speed speedState = STOP;
+
+    // Used for looking left and right state machine
     static MouseAction prevAction = NO_MOUSE_INPUT;
 
+    // Update necessary stuff
     mpuChest.update();
     mpuRight.update();
     mpuLeft.update();
@@ -108,26 +123,26 @@ void loop() {
     leftButton.update();
     rightButton.update();
 
-    // hotbar slot selection
-    // going down
+    // Hotbar selection
+    // Moving it left
     if (leftButton.fell()) {
-      // Serial.println("Left button");
+
       currSlot--;
       if (currSlot == 0) currSlot = 9;
-      // Serial.println(currSlot);
+
       char invSlot = currSlot + '0';
       Keyboard.press(invSlot);
       delay(10);
       Keyboard.release(invSlot);
       delay(10);
     }
-    // hotbar slot selection
-    // going up
+
+    // Moving it right
     if (rightButton.fell()) {
-      // Serial.println("Right button");
+
       currSlot++;
       if (currSlot == 10) currSlot = 1;
-      // Serial.println(currSlot);
+
       char invSlot = currSlot + '0';
       Keyboard.press(invSlot);
       delay(10);
@@ -136,7 +151,7 @@ void loop() {
 
     }
 
-    // acting on keyboard inputs
+    // Getting all the accelerometer data
     float absGyroLeft = abs(mpuLeft.getGyroZ()); // angular acceleration z
     float angleLeft = mpuLeft.getAngleZ(); // angle z
 
@@ -166,27 +181,22 @@ void loop() {
                             accZRight*accZRight);
 
 
+    // Check for walking or running
     checkSpeed(absGyroLeft, absGyroRight, magAccLeft, magAccRight);
 
-    if (accYChest > 0.75) {
+    // Jumping
+    if (accYChest > JUMP_THRESHOLD) {
       Keyboard.press(' ');   // press the key
       delay(10);
       Keyboard.release(' '); // release it right away
       delay(10);
     }
 
-    // acting on mouse inpouts
+    // Acting on mouse inputs
     MouseAction mouseInput = getMouseInput(mpuLeft, mpuRight, mpuChest, prevAction, clicking);
-    // prints for debugging
-    // Serial.print("Detected mouse input: ");
-    // Serial.println(mouseInput);
     actOnInput(Mouse, mouseInput, clicking);
 
-    // prints for debugging
-    Serial.print("Current Mouse Input: ");
-    Serial.println((MouseAction) mouseInput);
-    Serial.print("\t Previous Input: ");
-    Serial.println((MouseAction) prevAction);
+    // Saving previous loop states
     delay(5);
     prevChestY = (int)mpuChest.getAngleY();
     prevChestX = (int)mpuChest.getAngleX();
@@ -200,7 +210,7 @@ void loop() {
 
 
 /*
- ===+=== ===+=== ===+=== ===+=== ===+=== ===+=== MPU init  ===+=== ===+=== ===+=== ===+=== ===+=== ===+===
+ ===+=== ===+=== ===+=== ===+=== ===+=== ===+===  MPU init  ===+=== ===+=== ===+=== ===+=== ===+=== ===+===
 */
 
 void MPUinit() {
@@ -265,21 +275,21 @@ void checkSpeed(float gyroLeft, float gyroRight, float magAccLeft, float magAccR
 
   // if (magAccLeft < 1.25 && magAccRight < 1.25) {
     // Sprinting
-    if (gyroLeft >= 230 && gyroRight >= 230) {
+    if (gyroLeft >= SPRINTING_THRESHOLD && gyroRight >= SPRINTING_THRESHOLD) {
       // Serial.println("SPRINTING");
       Keyboard.press('f');
       delay(10);
       
     }
     // Walking
-    else if (gyroLeft >= 60 && gyroRight >= 60) {
+    else if (gyroLeft >= WALKING_THRESHOLD && gyroRight >= WALKING_THRESHOLD) {
       // Serial.println("WALKING");
       Keyboard.press('w');
       delay(10);
     }
 
     // Stopped
-    else if (gyroLeft <= 15 && gyroRight <= 15) {
+    else if (gyroLeft <= STOP_THRESHOLD && gyroRight <= STOP_THRESHOLD) {
       // Serial.println("STOPPED");
       Keyboard.releaseAll();
       delay(10);
